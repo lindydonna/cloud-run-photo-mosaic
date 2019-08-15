@@ -1,0 +1,12 @@
+{
+  "configurationSource": "attributes",
+  "bindings": [
+    {
+      "type": "queueTrigger",
+      "queueName": "%generate-mosaic%",
+      "name": "mosaicRequest"
+    }
+  ],
+  "scriptFile": "../MosaicMakerFunction.dll",
+  "entryPoint": "MosaicMaker.MosaicBuilder.CreateMosaicAsync"
+}

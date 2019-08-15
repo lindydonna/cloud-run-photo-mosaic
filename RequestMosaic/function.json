@@ -1,0 +1,15 @@
+{
+  "configurationSource": "attributes",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "methods": [
+        "POST"
+      ],
+      "authLevel": "anonymous",
+      "name": "input"
+    }
+  ],
+  "scriptFile": "../MosaicMakerFunction.dll",
+  "entryPoint": "MosaicMaker.MosaicBuilder.RequestImageProcessing"
+}

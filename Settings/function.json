@@ -1,0 +1,15 @@
+{
+  "configurationSource": "attributes",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "methods": [
+        "GET"
+      ],
+      "authLevel": "anonymous",
+      "name": "input"
+    }
+  ],
+  "scriptFile": "../MosaicMakerFunction.dll",
+  "entryPoint": "MosaicMaker.MosaicBuilder.Settings"
+}

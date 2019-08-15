@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <BaseNuGetRuntimeIdentifier>osx</BaseNuGetRuntimeIdentifier>
+    <RuntimeIdentifier>osx</RuntimeIdentifier>
+    <RootNamespace>MosaicMaker</RootNamespace>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>    
+    <PackageReference Include="Microsoft.Azure.WebJobs" version="3.0.11" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions" version="3.0.2" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Http" version="3.0.2" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.4" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Logging.ApplicationInsights" Version="3.0.8" />
+    <PackageReference Include="Microsoft.ProjectOxford.Vision" Version="1.0.393" /> 
+    <PackageReference Include="Newtonsoft.Json" version="11.0.2" />
+    <PackageReference Include="SkiaSharp" Version="1.59.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="local.settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="proxies.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="RequestMosaic/function.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>    
+    <None Update="Settings/function.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>        
+    <None Update="CreateMosaic/function.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>        
+  </ItemGroup>
+  <ProjectExtensions><VisualStudio><UserProperties host_1json__JSONSchema="http://json.schemastore.org/host.json" /></VisualStudio></ProjectExtensions>
+</Project>
