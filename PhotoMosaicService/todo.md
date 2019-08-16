@@ -1,8 +1,8 @@
-Todo list
+## Todo list
 
 - [x] Download images from Bing
 - [x] Do image recognition on an image by URL
 - [ ] Create mosaic
-- [ ] Generate shared access URL for image upload from client
+- [ ] Turn SPA client into a server-side page
 - [ ] Launch mosaic process asynchronously
 - [ ] Get bucket name from environment variable

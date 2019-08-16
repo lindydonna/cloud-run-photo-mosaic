@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System;
 using Microsoft.Extensions.Logging;
+using System.Net.Http;
 
 public class MosaicRequest
 {
@@ -20,6 +21,8 @@ public class MosaicRequest
 public class MosaicController : ControllerBase
 {
 	private readonly ILogger logger;
+    private const string TileBucket = "lindydonna-mosaic-tiles";
+    private const string OutputBucket = "lindydonna-mosaic-output";
 
 	public MosaicController(ILogger<MosaicController> logger)
 	{
@@ -37,27 +40,29 @@ public class MosaicController : ControllerBase
 	[Route("[action]")]
 	public IActionResult DetectLabel(MosaicRequest request)
 	{
-		// Instantiates a client
 		var client = ImageAnnotatorClient.Create();
-		// Load the image file into memory
 		var image = Image.FromUri(request.InputImageUrl);
-		// Performs label detection on the image file
 		var response = client.DetectLabels(image);
-		// foreach (var annotation in response)
-		// {
-		//     if (annotation.Description != null)
-		//         Console.WriteLine(annotation.Description);
-		// }
 
 		return Ok(response);
 	}
 
-	// // POST: api/
-	// [HttpPost]
-	// public IActionResult CreateMosaic(MosaicRequest request)
-	// {
+	// POST: api/
+	[HttpPost]
+    [Route("[action]")]
+	public async Task<IActionResult> CreateMosaic(MosaicRequest request)
+	{
+        var sourceImage = await DownloadFileAsync(request.InputImageUrl);
 
-	// }
+        var tileDirectory = GetStableHash(request.ImageContentString).ToString();
+
+        var stream = MosaicBuilder.GenerateMosaicFromTiles(
+            sourceImage, 
+            TileBucket, tileDirectory, 
+            request.TilePixels, logger);
+
+        return Ok();
+	}
 
 	// POST: api/downloadImages
 	[HttpPost]
@@ -65,7 +70,7 @@ public class MosaicController : ControllerBase
 	public async Task<IActionResult> DownloadBingImages(MosaicRequest request)
 	{
 		string imageKeyword = request.ImageContentString;
-		string outputBucket = "lindydonna-photo-mosaic";
+		string outputBucket = "lindydonna-photo-mosaic"; // TODO: change
 
 		var imageUrls = await DownloadImages.GetImageResultsAsync(imageKeyword, logger);
 		var filePrefix = GetStableHash(imageKeyword).ToString();
@@ -76,6 +81,26 @@ public class MosaicController : ControllerBase
 		return Ok(filePrefix);
 	}
 
+    private static async Task<Stream> DownloadFileAsync(string inputImageUrl)
+    {
+        var client = new HttpClient();
+
+        try {
+            var bytes = await client.GetByteArrayAsync(inputImageUrl);
+            return new MemoryStream(bytes);
+            
+        }
+        catch (Exception) {
+            return null;
+        }
+    }
+
+	private static void WriteToStorage(string bucket, string filename, Stream stream)
+	{
+		var storage = StorageClient.Create();
+		storage.UploadObject(bucket, filename, null, stream);
+	}
+    
 	/// <summary>
 	/// Computes a stable non-cryptographic hash
 	/// </summary>

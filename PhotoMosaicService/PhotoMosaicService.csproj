@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
     <PackageReference Include="Google.Cloud.Vision.V1" Version="1.6.0" />    
+    <PackageReference Include="SkiaSharp" Version="1.59.1" />
   </ItemGroup>
 
 </Project>
