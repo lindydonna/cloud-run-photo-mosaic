@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
+using System.Linq;
 
 public class MosaicRequest
 {
@@ -23,37 +24,29 @@ public class MosaicController : ControllerBase
 	private readonly ILogger logger;
     private const string TileBucket = "lindydonna-mosaic-tiles";
     private const string OutputBucket = "lindydonna-mosaic-output";
+    private const string InputBucket = "lindydonna-photo-mosaic";
 
 	public MosaicController(ILogger<MosaicController> logger)
 	{
 		this.logger = logger;
 	}
 
-	[HttpGet]
-	public string GetAll()
-	{
-		return "Hello World!!!!!";
-	}
-
-	// POST: api/detectLabel
-	[HttpPost]
-	[Route("[action]")]
-	public IActionResult DetectLabel(MosaicRequest request)
-	{
-		var client = ImageAnnotatorClient.Create();
-		var image = Image.FromUri(request.InputImageUrl);
-		var response = client.DetectLabels(image);
-
-		return Ok(response);
-	}
-
-	// POST: api/
 	[HttpPost]
     [Route("[action]")]
 	public async Task<IActionResult> CreateMosaic(MosaicRequest request)
 	{
         var sourceImage = await DownloadFileAsync(request.InputImageUrl);
 
+		var client = ImageAnnotatorClient.Create();
+		var image = Image.FromStream(sourceImage);
+		var response = client.DetectLabels(image);
+
+        if (response.Count > 0) {
+            request.ImageContentString = response.FirstOrDefault().Description;
+            logger.LogInformation($"Image label: {request.ImageContentString}");
+        }
+
+        await DownloadBingImages(request);
         var tileDirectory = GetStableHash(request.ImageContentString).ToString();
 
         var stream = MosaicBuilder.GenerateMosaicFromTiles(
@@ -61,24 +54,21 @@ public class MosaicController : ControllerBase
             TileBucket, tileDirectory, 
             request.TilePixels, logger);
 
-        return Ok();
+        var outputFile = $"{Guid.NewGuid().ToString()}.jpg";
+        WriteToStorage(OutputBucket, outputFile, stream);
+
+        return Ok(outputFile);
 	}
 
-	// POST: api/downloadImages
-	[HttpPost]
-	[Route("[action]")]
-	public async Task<IActionResult> DownloadBingImages(MosaicRequest request)
+	public async Task DownloadBingImages(MosaicRequest request)
 	{
 		string imageKeyword = request.ImageContentString;
-		string outputBucket = "lindydonna-photo-mosaic"; // TODO: change
+		string outputBucket = TileBucket;
 
 		var imageUrls = await DownloadImages.GetImageResultsAsync(imageKeyword, logger);
 		var filePrefix = GetStableHash(imageKeyword).ToString();
-		logger.LogInformation($"Query hash: {filePrefix}");
 
 		await DownloadImages.DownloadBingImagesAsync(imageUrls, outputBucket, filePrefix, 20, 20, logger);
-
-		return Ok(filePrefix);
 	}
 
     private static async Task<Stream> DownloadFileAsync(string inputImageUrl)
@@ -101,11 +91,6 @@ public class MosaicController : ControllerBase
 		storage.UploadObject(bucket, filename, null, stream);
 	}
     
-	/// <summary>
-	/// Computes a stable non-cryptographic hash
-	/// </summary>
-	/// <param name="value">The string to use for computation</param>
-	/// <returns>A stable, non-cryptographic, hash</returns>
 	internal static int GetStableHash(string value)
 	{
 		if (value == null) {

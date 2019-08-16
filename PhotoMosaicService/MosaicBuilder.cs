@@ -69,7 +69,7 @@ public static class MosaicBuilder
 			var tempPath = Path.Combine(cacheDir, Guid.NewGuid().ToString());
 
             using (var outputFile = File.OpenWrite(tempPath)) {
-				storage.DownloadObject(tileBucket, $"{tileDirectory}/{blob}", outputFile);
+				storage.DownloadObject(tileBucket, $"{blob.Name}", outputFile);
 			}
 
 			logger.LogInformation($"Downloaded {blob} to {tempPath}.");
@@ -214,9 +214,11 @@ public static class MosaicBuilder
 		{
 			foreach (var bytes in tileImages) {
 				var bitmap = SKBitmap.Decode(bytes);
-
-				var rect = SKRectI.Create(0, 0, bitmap.Width, bitmap.Height);
-				tileImageRGBGridList.Add((bitmap, GetAverageColorGrid(bitmap, rect)));
+                
+                if (bitmap != null) {
+                    var rect = SKRectI.Create(0, 0, bitmap.Width, bitmap.Height);
+                    tileImageRGBGridList.Add((bitmap, GetAverageColorGrid(bitmap, rect)));
+                }
 			}
 		}
 
