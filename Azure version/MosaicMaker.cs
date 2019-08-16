@@ -2,7 +2,6 @@
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.Storage;
 using Microsoft.Azure.WebJobs.Host;
-using Microsoft.ProjectOxford.Vision;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json.Linq;
 using SkiaSharp;
@@ -85,28 +84,7 @@ namespace MosaicMaker
             bool noCustomImageSearch = false;
 
             if (String.IsNullOrEmpty(mosaicRequest.ImageContentString)) { // no keyword provided, use image recognition
-
-                string predictionUrl = Environment.GetEnvironmentVariable("PredictionApiUrl");
-
-                if (String.IsNullOrEmpty(predictionUrl)) { // if no Custom Vision API key was provided, skip it
-                    noCustomImageSearch = true;
-                }
-               
-                try {
-                    imageKeyword = await PredictImageAsync(predictionUrl, sourceImage, log);
-                    noCustomImageSearch = String.IsNullOrEmpty(imageKeyword);
-                }
-                catch (Exception e) {
-                    log.Info($"Custom image failed: {e.Message}");
-                    noCustomImageSearch = true; // on exception, use regular Vision Service
-                }
-
-                if (noCustomImageSearch) {
-                    log.Info("Falling back to Vision Service");
-
-                    sourceImage.Seek(0, SeekOrigin.Begin);
-                    imageKeyword = await AnalyzeImageAsync(sourceImage);
-                }
+                imageKeyword = await AnalyzeImageAsync(sourceImage);
             }
 
             log.Info($"\n\nImage analysis: {imageKeyword}\n");
@@ -152,10 +130,12 @@ namespace MosaicMaker
         #region Helpers
         private static async Task<string> AnalyzeImageAsync(Stream image)
         {
-            var client = new VisionServiceClient(VisionServiceApiKey);
-            var result = await client.AnalyzeImageAsync(image, new VisualFeature[] { VisualFeature.Description });
+            
 
-            return result.Description.Captions.FirstOrDefault().Text;
+            // var client = new VisionServiceClient(VisionServiceApiKey);
+            // var result = await client.AnalyzeImageAsync(image, new VisualFeature[] { VisualFeature.Description });
+
+            // return result.Description.Captions.FirstOrDefault().Text;
         }
 
         static byte[] GetImageAsByteArray(Stream imageStream)

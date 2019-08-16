@@ -5,9 +5,9 @@
     "tasks": [
         {
             "taskName": "build",
-            "command": "dotnet build MosaicMakerFunction.csproj",
+            "command": "dotnet build PhotoMosaicService.csproj",
             "options": {
-                "cwd": "${workspaceRoot}/MosaicMaker"
+                "cwd": "${workspaceRoot}/PhotoMosaicService"
             },
             "type": "shell",
             "group": "build",
