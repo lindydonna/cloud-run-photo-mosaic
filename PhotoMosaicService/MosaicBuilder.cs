@@ -63,7 +63,11 @@ public static class MosaicBuilder
 
 		var storage = StorageClient.Create();
 		var options = new ListObjectsOptions() { Delimiter = "/" };
+
+        // TODO: change to blob name instead of folder
 		var objects = storage.ListObjects(tileBucket, tileDirectory + "/", options);
+
+        // TODO: download zipfile instead of individual files
 
 		foreach (var blob in objects) {
 			var tempPath = Path.Combine(cacheDir, Guid.NewGuid().ToString());
@@ -157,16 +161,6 @@ public static class MosaicBuilder
 			var imageBytes = surface.Snapshot().Encode(SKEncodedImageFormat.Jpeg, 80);
 			return new MemoryStream(imageBytes.ToArray());
 		}
-	}
-
-	private static List<string> GetExclusionList(string[,] mosaicTileGrid, int xIndex, int yIndex)
-	{
-		int xRadius = (MosaicBuilder.DitheringRadius != -1 ? MosaicBuilder.DitheringRadius : mosaicTileGrid.GetLength(0));
-		int yRadius = (MosaicBuilder.DitheringRadius != -1 ? MosaicBuilder.DitheringRadius : mosaicTileGrid.GetLength(1));
-
-		var exclusionList = new List<string>();
-
-		return exclusionList;
 	}
 
 	public class QuadrantMatchingTileProvider : IDisposable

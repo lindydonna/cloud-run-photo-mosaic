@@ -3,7 +3,6 @@ using Google.Cloud.Vision.V1;
 using Google.Cloud.Storage.V1;
 using System.IO;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using System;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
@@ -60,7 +59,9 @@ public class MosaicController : ControllerBase
         return Ok(outputFile);
 	}
 
-	public async Task DownloadBingImages(MosaicRequest request)
+	[HttpPost]
+    [Route("[action]")]
+	public async Task<IActionResult> DownloadBingImages(MosaicRequest request)
 	{
 		string imageKeyword = request.ImageContentString;
 		string outputBucket = TileBucket;
@@ -69,6 +70,8 @@ public class MosaicController : ControllerBase
 		var filePrefix = GetStableHash(imageKeyword).ToString();
 
 		await DownloadImages.DownloadBingImagesAsync(imageUrls, outputBucket, filePrefix, 20, 20, logger);
+
+        return Ok();
 	}
 
     private static async Task<Stream> DownloadFileAsync(string inputImageUrl)
