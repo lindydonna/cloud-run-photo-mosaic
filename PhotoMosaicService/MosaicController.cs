@@ -30,6 +30,12 @@ public class MosaicController : ControllerBase
         this.logger = logger;
     }
 
+    [HttpGet]
+    public IActionResult GetAll()
+    {
+        return Ok("Hello world!");
+    }
+
     [HttpPost]
     [Route("[action]")]
     public async Task<IActionResult> CreateMosaic(MosaicRequest request)
@@ -37,6 +43,7 @@ public class MosaicController : ControllerBase
         var sourceImage = await DownloadFileAsync(request.InputImageUrl);
 
         var client = ImageAnnotatorClient.Create();
+
         var image = Image.FromStream(sourceImage);
         var response = client.DetectLabels(image);
 
@@ -56,7 +63,7 @@ public class MosaicController : ControllerBase
         var outputFile = $"{Guid.NewGuid().ToString()}.jpg";
         WriteToStorage(OutputBucket, outputFile, stream);
 
-        return Ok(outputFile);
+        return Ok($"https://storage.cloud.google.com/{OutputBucket}/{outputFile}");
     }
 
     [HttpPost]
@@ -69,7 +76,10 @@ public class MosaicController : ControllerBase
         var imageUrls = await DownloadImages.GetImageResultsAsync(imageKeyword, logger);
         var filePrefix = GetStableHash(imageKeyword).ToString();
 
-        await DownloadImages.DownloadBingImagesAsync(imageUrls, outputBucket, filePrefix, 20, 20, logger);
+        if (request.TilePixels == 0) {
+            request.TilePixels = MosaicBuilder.TileHeight;
+        }
+        await DownloadImages.DownloadBingImagesAsync(imageUrls, outputBucket, filePrefix, request.TilePixels, request.TilePixels, logger);
 
         return Ok();
     }
@@ -108,4 +118,5 @@ public class MosaicController : ControllerBase
             return hash;
         }
     }
+
 }

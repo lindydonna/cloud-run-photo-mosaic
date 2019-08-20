@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Google.Cloud.Storage.V1;
+using System.IO.Compression;
 
 public static class MosaicBuilder
 {
@@ -50,36 +51,32 @@ public static class MosaicBuilder
     private static List<byte[]> GetTileImages(
         string tileBucket, string tileDirectory, ILogger logger)
     {
-        var cacheDir = Path.Combine(Path.GetTempPath(), "MosaicCache", tileDirectory);
+        var cacheDir = Path.Combine(Path.GetTempPath(), "MosaicCache");
         Directory.CreateDirectory(cacheDir);
-        var files = new DirectoryInfo(cacheDir).GetFiles();
 
-        if (files.Length >= 50) {
-            return files.Select(x => File.ReadAllBytes(x.FullName)).ToList();
-        }
-
-        logger.LogInformation("Downloading tiles images from storage");
-        var start = DateTime.Now;
+        var zipFile =  $"{tileDirectory}.zip";
+        var zipPath = Path.Combine(cacheDir, zipFile);
 
         var storage = StorageClient.Create();
-        var options = new ListObjectsOptions() { Delimiter = "/" };
+        var objects = storage.ListObjects(tileBucket, zipFile, null);
 
-        // TODO: change to blob name instead of folder
-        var objects = storage.ListObjects(tileBucket, tileDirectory + "/", options);
-
-        // TODO: download zipfile instead of individual files
-
-        foreach (var blob in objects) {
-            var tempPath = Path.Combine(cacheDir, Guid.NewGuid().ToString());
-
-            using (var outputFile = File.OpenWrite(tempPath)) {
-                storage.DownloadObject(tileBucket, $"{blob.Name}", outputFile);
-            }
-
-            logger.LogInformation($"Downloaded {blob} to {tempPath}.");
+        if (objects.Count() != 1) {
+            logger.LogError($"Storage bucket object match for {zipFile} was {objects.Count()}, expected 1");
+            return new List<byte[]>();
         }
 
-        files = new DirectoryInfo(cacheDir).GetFiles();
+        logger.LogInformation("Downloading tile zipfile from storage");
+        var start = DateTime.Now;
+
+        using (var outputFile = File.OpenWrite(zipPath)) {
+            storage.DownloadObject(tileBucket, zipFile, outputFile);
+            logger.LogInformation($"Downloaded {zipFile} to {zipPath}.");
+        }
+
+        var extractDir = Path.Combine(cacheDir, Guid.NewGuid().ToString());
+        ZipFile.ExtractToDirectory(zipPath, extractDir);
+
+        var files = new DirectoryInfo(extractDir).GetFiles();
         var result = files.Select(x => File.ReadAllBytes(x.FullName)).ToList();
 
         logger.LogInformation($"Total time to fetch tiles {(DateTime.Now - start).TotalMilliseconds}");
@@ -98,7 +95,7 @@ public static class MosaicBuilder
     private static Stream GenerateMosaic(
         QuadrantMatchingTileProvider tileProvider, Stream inputStream, 
         List<byte[]> tileImages)
-      {
+    {
         SKBitmap[,] mosaicTileGrid;
 
         inputStream.Seek(0, SeekOrigin.Begin);

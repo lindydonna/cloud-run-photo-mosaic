@@ -5,12 +5,10 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System.Web;
-using System.Diagnostics;
-using System.Threading;
 using Google.Cloud.Storage.V1;
-using Google.Apis.Storage.v1.Data;
 using Microsoft.Extensions.Logging;
 using System.IO;
+using System.IO.Compression;
 
 public static class DownloadImages
 {
@@ -59,6 +57,9 @@ public static class DownloadImages
                     result.Add(imageInfo["thumbnailUrl"].ToString());
                 }
             }
+            else {
+                logger.LogError($"Image search returned error: {response.ToString()}");
+            }
         }
         catch (Exception e) {
             logger.LogError($"Exception during image search: {e.Message}");
@@ -78,16 +79,17 @@ public static class DownloadImages
 
         var options = new ListObjectsOptions() { Delimiter = "/" };
 
-        var objects = storage.ListObjects(outputBucket, directoryHash + "/", options);
-        var objectCount = objects.Count();
+        var zipFilename = $"{directoryHash}.zip";
+        var cacheDir = Path.Combine(Path.GetTempPath(), "MosaicCache", directoryHash);
+        var zipPath = Path.Combine(Path.GetTempPath(), "MosaicCache", zipFilename);
+        Directory.CreateDirectory(cacheDir);
 
-        if (objectCount >= MaxImages) {
-            logger.LogInformation($"Skipping tile download, have {objectCount} images cached");
+        var objects = storage.ListObjects(outputBucket, zipFilename, null);
+
+        if (File.Exists(zipPath) || objects.Count() > 0) {
+            logger.LogInformation($"Zipfile already exists, skipping Bing image download");
             return;
         }
-
-        var cacheDir = Path.Combine(Path.GetTempPath(), "MosaicCache", directoryHash);
-        Directory.CreateDirectory(cacheDir);
 
         foreach (var url in imageUrls) {
             try {
@@ -100,7 +102,6 @@ public static class DownloadImages
                     logger.LogInformation($"Downloading blob: {filePath}");
 
                     using (var outputFileStream = File.Create(filePath)) {
-                        responseStream.Seek(0, SeekOrigin.Begin);
                         responseStream.CopyTo(outputFileStream);
                     }
                 }
@@ -111,8 +112,15 @@ public static class DownloadImages
             }
         }
 
-        // TODO: zip up the directory and upload to storage
-        // storage.UploadObject(outputBucket, $"{directoryHash}/{imageId}", null, responseStream);
+        ZipFile.CreateFromDirectory(cacheDir, zipPath);
 
+        using (var zipStream = File.Open(zipPath, FileMode.Open)) {
+            if (zipStream != null) {
+                storage.UploadObject(outputBucket, zipFilename, null, zipStream);
+            }
+            else {
+                logger.LogError($"Zip file {zipPath} does not exist!");
+            }
+        }
     }
 }
