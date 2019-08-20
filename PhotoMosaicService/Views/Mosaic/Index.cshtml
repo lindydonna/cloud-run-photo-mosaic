@@ -1,0 +1,154 @@
+<link rel="icon" type="image/png" href="/favicon.png">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/min/dropzone.min.css" type="text/css">
+<style>
+    html {
+        min-height: 100%;
+    }
+
+    body {
+        min-height: 100%;
+        margin-left: 50px;
+        margin-right: 50px;
+        font-family: Segoe UI, Frutiger, Frutiger Linotype, Dejavu Sans, Helvetica Neue, Arial, sans-serif;
+    }
+
+    .content {
+        grid-area: content;
+    }
+
+    .header {
+        grid-area: header;
+    }
+
+    .footer {
+        grid-area: footer;
+    }
+
+    h1 {
+        margin: 0;
+    }
+
+    .wrapper {
+        height: 100%;
+        display: grid;
+        grid-gap: 10px;
+        grid-template-rows: auto auto 150px;
+        grid-template-columns: auto;
+        grid-template-areas: "header" "content" "footer";
+        background-color: #fff;
+        color: #2F2D4A;
+    }
+
+
+    .box {
+        font-size: 150%;
+    }
+
+    .header,
+    .footer {}
+
+    #imageUploader {
+        border-radius: 5px;
+        border-style: dashed;
+        border-color: black;
+        border-width: 1px;
+        min-height: 100px;
+    }
+
+    .dropzone {
+        border: 2px dashed darkblue;
+        border-radius: 5px;
+        background: white;
+    }
+
+    .dropzone .dz-message {
+        font-weight: 400;
+    }
+
+    #images {
+        display: flex;
+        justify-content: center;
+        min-height: 300px;
+        flex-wrap: wrap;
+    }
+
+    .card {
+        margin: 5px;
+        height: 300px;
+        min-width: 216px;
+        padding: 2px;
+        /*border: 2px solid black;
+        border-radius: 5px;*/
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .loading {
+        -webkit-animation: loadingAnimation 1s 20 ease;
+        -moz-animation: loadingAnimation 1s 20 ease;
+        -o-animation: loadingAnimation 1s 20 ease;
+    }
+
+    .pulse {
+        -webkit-animation: pulseAnimation 1s infinite ease;
+        -moz-animation: pulseAnimation 1s infinite ease;
+        -o-animation: pulseAnimation 1s infinite ease;
+    }
+
+    .formInput {
+        margin-bottom: 10px;
+        color: #666;
+    }
+
+    #SearchTerm {
+        font-family: Segoe UI, Frutiger, Frutiger Linotype, Dejavu Sans, Helvetica Neue, Arial, sans-serif;
+        font-size: 90%;
+        color: #2F2D4A;
+        border-radius: 3px;
+        border: 1px solid #666;
+        padding: 2px;
+    }
+
+</style>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/min/dropzone.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+    // Disable autoDiscover
+    Dropzone.autoDiscover = false;
+</script>
+<script src="https://use.fontawesome.com/bc4f54b80b.js"></script>
+
+@{
+    ViewData["Title"] = "Create Mosaic";
+}
+
+<div class="wrapper">
+    <div class="box header">
+        <h1><span class="fa fa-picture-o"></span> <span id="page-title">Mosaic Generator</span></h1>
+    </div>
+    <div class="box content">
+        <hr>
+        <h2>1. Upload a photo</h2>
+        <div>
+            <div class="formInput"><label for="SearchTerm">(Optional) Search term for image: </label> <input id="SearchTerm" type="text"></input></div>
+            <form class="dropzone needsclick dz-clickable" id="dropzone">
+                <div class="dz-message needsclick">
+                    Drop files here or click to upload.<br>
+                </div>
+            </form>
+        </div>
+        <h2>2. The photo mosaic will appear below</h2>
+        <div id="images">
+        </div>
+    </div>
+    <div class="box footer">
+        <hr>
+        <div class="privacy">
+            <p>This app has no official privacy policy. Your data will be uploaded to a service in order produce a picture.
+                Your images will be public once you upload them and there is no automated way to remove them.</p>
+        </div>
+    </div>
+</div>

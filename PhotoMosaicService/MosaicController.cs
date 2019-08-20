@@ -18,7 +18,7 @@ public class MosaicRequest
 
 [ApiController]
 [Route("api/[controller]")]
-public class MosaicController : ControllerBase
+public class MosaicController : Controller
 {
     private readonly ILogger logger;
     private const string TileBucket = "lindydonna-mosaic-tiles";
@@ -31,9 +31,10 @@ public class MosaicController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAll()
+    public IActionResult Index()
     {
-        return Ok("Hello world!");
+        ViewData["Message"] = "Create a mosaic";
+        return View();
     }
 
     [HttpPost]
