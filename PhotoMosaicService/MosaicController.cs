@@ -7,12 +7,13 @@ using System;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using System.Linq;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
+using System;
 
 public class MosaicRequest
 {
     public string InputImageUrl { get; set; }
-    public string OutputFilename { get; set; }
-    public string ImageContentString { get; set; }  // if null or empty, use image recognition on the input image
     public int TilePixels { get; set; } // override default value in app settings
 }
 
@@ -41,49 +42,78 @@ public class MosaicController : Controller
     [Route("[action]")]
     public async Task<IActionResult> CreateMosaic(MosaicRequest request)
     {
-        var sourceImage = await DownloadFileAsync(request.InputImageUrl);
+        var inputImage = await DownloadFileAsync(request.InputImageUrl);
+        var mosaicFile = await CreateMosaicFromStreamAsync(inputImage, request.TilePixels);
 
+        return Ok(mosaicFile);
+    }
+
+    private async Task<string> CreateMosaicFromStreamAsync(
+        Stream inputImage, int tilePixels = 20)
+    {
         var client = ImageAnnotatorClient.Create();
 
-        var image = Image.FromStream(sourceImage);
+        var image = Image.FromStream(inputImage);
         var response = client.DetectLabels(image);
+        string imageLabel = "cat"; // default image label is "cat"
 
         if (response.Count > 0) {
-            request.ImageContentString = response.FirstOrDefault().Description;
-            logger.LogInformation($"Image label: {request.ImageContentString}");
+            imageLabel = response.FirstOrDefault().Description;
+            logger.LogInformation($"Image label: {imageLabel}");
         }
 
-        await DownloadBingImages(request);
-        var tileDirectory = GetStableHash(request.ImageContentString).ToString();
+        await DownloadBingImages(imageLabel, tilePixels);
+        var tileDirectory = GetStableHash(imageLabel).ToString();
 
         var stream = MosaicBuilder.GenerateMosaicFromTiles(
-            sourceImage, 
+            inputImage, 
             TileBucket, tileDirectory, 
-            request.TilePixels, logger);
+            tilePixels, logger);
 
         var outputFile = $"{Guid.NewGuid().ToString()}.jpg";
         WriteToStorage(OutputBucket, outputFile, stream);
 
-        return Ok($"https://storage.cloud.google.com/{OutputBucket}/{outputFile}");
+        return outputFile;
     }
 
     [HttpPost]
     [Route("[action]")]
-    public async Task<IActionResult> DownloadBingImages(MosaicRequest request)
+    public async Task<IActionResult> DownloadBingImages(string imageLabel, int tilePixels)
     {
-        string imageKeyword = request.ImageContentString;
         string outputBucket = TileBucket;
 
-        var imageUrls = await DownloadImages.GetImageResultsAsync(imageKeyword, logger);
-        var filePrefix = GetStableHash(imageKeyword).ToString();
+        var filePrefix = GetStableHash(imageLabel).ToString();
 
-        if (request.TilePixels == 0) {
-            request.TilePixels = MosaicBuilder.TileHeight;
-        }
-        await DownloadImages.DownloadBingImagesAsync(imageUrls, outputBucket, filePrefix, request.TilePixels, request.TilePixels, logger);
+        await DownloadImages.DownloadBingImagesAsync(
+            imageLabel, outputBucket, 
+            filePrefix, tilePixels, logger);
 
         return Ok();
     }
+
+    [HttpPost]
+    public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
+    {
+        // TODO: check file extension  
+        if (file.Length > 0) {
+            var outputFilename = await CreateMosaicFromStreamAsync(file.OpenReadStream());
+    
+            // download image from storage
+            var storage = StorageClient.Create();
+            var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid().ToString()}.jpg");
+
+            using (var tempFile = System.IO.File.OpenWrite(tempPath)) {
+                storage.DownloadObject(OutputBucket, outputFilename, tempFile);
+                logger.LogInformation($"Downloaded {outputFilename} to {tempPath}.");
+
+                ViewData["imagePath"] = tempPath;
+            }
+
+            return View("Index");
+        }
+
+        return BadRequest("No input image");
+    }    
 
     private static async Task<Stream> DownloadFileAsync(string inputImageUrl)
     {

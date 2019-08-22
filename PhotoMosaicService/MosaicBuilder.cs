@@ -272,8 +272,8 @@ public static class MosaicBuilder
                 }
             }
 
-        return rgbGrid;
-    }
+            return rgbGrid;
+        }
 
         public void Dispose()
         {

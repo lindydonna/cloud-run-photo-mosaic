@@ -130,18 +130,27 @@
         <h1><span class="fa fa-picture-o"></span> <span id="page-title">Mosaic Generator</span></h1>
     </div>
     <div class="box content">
-        <hr>
-        <h2>1. Upload a photo</h2>
-        <div>
+
+        <form method="post" enctype="multipart/form-data" asp-controller="Mosaic" asp-action="UploadFile">
+            <div class="form-group">
+                <h2>1. Upload an image</h2>
+                <input type="file" name="file">
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Upload File">
+            </div>
+        </form>        
+        <!-- <div>
             <div class="formInput"><label for="SearchTerm">(Optional) Search term for image: </label> <input id="SearchTerm" type="text"></input></div>
             <form class="dropzone needsclick dz-clickable" id="dropzone">
                 <div class="dz-message needsclick">
                     Drop files here or click to upload.<br>
                 </div>
             </form>
-        </div>
+        </div> -->
         <h2>2. The photo mosaic will appear below</h2>
         <div id="images">
+            <img src=@ViewData["imagePath"] />
         </div>
     </div>
     <div class="box footer">

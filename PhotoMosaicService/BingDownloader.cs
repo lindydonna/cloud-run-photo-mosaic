@@ -69,9 +69,9 @@ public static class DownloadImages
     }
 
     public static async Task DownloadBingImagesAsync(
-        List<string> imageUrls,
+        string imageKeyword,
         string outputBucket, string directoryHash,
-        int tileWidth, int tileHeight,
+        int tileSize,
         ILogger logger)
     {
         var httpClient = new HttpClient();
@@ -91,9 +91,11 @@ public static class DownloadImages
             return;
         }
 
+        var imageUrls = await DownloadImages.GetImageResultsAsync(imageKeyword, logger);
+
         foreach (var url in imageUrls) {
             try {
-                var resizedUrl = $"{url}&w={tileWidth}&h={tileHeight}&c=7";
+                var resizedUrl = $"{url}&w={tileSize}&h={tileSize}&c=7";
                 var queryString = HttpUtility.ParseQueryString(new Uri(url).Query);
                 var imageId = queryString["id"] + ".jpg";
                 var filePath = Path.Combine(cacheDir, imageId);
