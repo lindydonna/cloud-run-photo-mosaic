@@ -16,6 +16,7 @@ public class MosaicRequest
 
 [ApiController]
 [Route("[controller]")]
+[Route("~/")]
 public class MosaicController : Controller
 {
     private readonly ILogger logger;
@@ -29,7 +30,6 @@ public class MosaicController : Controller
     }
 
     [HttpGet]
-    [HttpGet("~/")]
     public IActionResult Index()
     {
         ViewData["Message"] = "Create a mosaic";
