@@ -5,11 +5,8 @@ using System.IO;
 using System.Threading.Tasks;
 using System;
 using Microsoft.Extensions.Logging;
-using System.Net.Http;
 using System.Linq;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
-using System;
 
 public class MosaicRequest
 {
@@ -18,7 +15,7 @@ public class MosaicRequest
 }
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("[controller]")]
 public class MosaicController : Controller
 {
     private readonly ILogger logger;
@@ -32,6 +29,7 @@ public class MosaicController : Controller
     }
 
     [HttpGet]
+    [HttpGet("~/")]
     public IActionResult Index()
     {
         ViewData["Message"] = "Create a mosaic";
@@ -39,14 +37,24 @@ public class MosaicController : Controller
     }
 
     [HttpPost]
-    [Route("[action]")]
-    public async Task<IActionResult> CreateMosaic(MosaicRequest request)
+    public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
     {
-        var inputImage = await DownloadFileAsync(request.InputImageUrl);
-        var mosaicFile = await CreateMosaicFromStreamAsync(inputImage, request.TilePixels);
+        // TODO: check file extension  
+        if (file.Length > 0) {
+            var outputFilename = await CreateMosaicFromStreamAsync(file.OpenReadStream());
+    
+            // download image from storage
+            var storage = StorageClient.Create();
+            var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid().ToString()}.jpg");
 
-        return Ok(mosaicFile);
-    }
+            var outputStream = new MemoryStream();
+            storage.DownloadObject(OutputBucket, outputFilename, outputStream);
+
+            return File(outputStream.GetBuffer(), "image/jpg");
+        }
+
+        return BadRequest("No input image");
+    }        
 
     private async Task<string> CreateMosaicFromStreamAsync(
         Stream inputImage, int tilePixels = 20)
@@ -62,7 +70,14 @@ public class MosaicController : Controller
             logger.LogInformation($"Image label: {imageLabel}");
         }
 
-        await DownloadBingImages(imageLabel, tilePixels);
+        string outputBucket = TileBucket;
+
+        var filePrefix = GetStableHash(imageLabel).ToString();
+
+        await DownloadImages.DownloadBingImagesAsync(
+            imageLabel, outputBucket, 
+            filePrefix, tilePixels, logger);
+
         var tileDirectory = GetStableHash(imageLabel).ToString();
 
         var stream = MosaicBuilder.GenerateMosaicFromTiles(
@@ -74,59 +89,6 @@ public class MosaicController : Controller
         WriteToStorage(OutputBucket, outputFile, stream);
 
         return outputFile;
-    }
-
-    [HttpPost]
-    [Route("[action]")]
-    public async Task<IActionResult> DownloadBingImages(string imageLabel, int tilePixels)
-    {
-        string outputBucket = TileBucket;
-
-        var filePrefix = GetStableHash(imageLabel).ToString();
-
-        await DownloadImages.DownloadBingImagesAsync(
-            imageLabel, outputBucket, 
-            filePrefix, tilePixels, logger);
-
-        return Ok();
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
-    {
-        // TODO: check file extension  
-        if (file.Length > 0) {
-            var outputFilename = await CreateMosaicFromStreamAsync(file.OpenReadStream());
-    
-            // download image from storage
-            var storage = StorageClient.Create();
-            var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid().ToString()}.jpg");
-
-            using (var tempFile = System.IO.File.OpenWrite(tempPath)) {
-                storage.DownloadObject(OutputBucket, outputFilename, tempFile);
-                logger.LogInformation($"Downloaded {outputFilename} to {tempPath}.");
-
-                ViewData["imagePath"] = tempPath;
-            }
-
-            return View("Index");
-        }
-
-        return BadRequest("No input image");
-    }    
-
-    private static async Task<Stream> DownloadFileAsync(string inputImageUrl)
-    {
-        var client = new HttpClient();
-
-        try {
-            var bytes = await client.GetByteArrayAsync(inputImageUrl);
-            return new MemoryStream(bytes);
-            
-        }
-        catch (Exception) {
-            return null;
-        }
     }
 
     private static void WriteToStorage(string bucket, string filename, Stream stream)

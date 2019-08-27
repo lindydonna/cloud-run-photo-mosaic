@@ -8,10 +8,7 @@ public class Startup
     // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddMvc().AddRazorPagesOptions(options =>
-        {
-            options.Conventions.AddPageRoute("/Mosaic", ""); // TODO: make mosaic view
-        });
+        services.AddMvc();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -23,7 +20,9 @@ public class Startup
         }
 
         app.UseHttpsRedirection();
-        app.UseMvc();
         app.UseStaticFiles();
+
+        app.UseMvc();
+        
     }
 }

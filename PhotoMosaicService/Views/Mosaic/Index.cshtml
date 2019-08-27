@@ -11,6 +11,7 @@
         margin-left: 50px;
         margin-right: 50px;
         font-family: Segoe UI, Frutiger, Frutiger Linotype, Dejavu Sans, Helvetica Neue, Arial, sans-serif;
+        font-size: 16px;
     }
 
     .content {
@@ -31,7 +32,6 @@
 
     .wrapper {
         height: 100%;
-        display: grid;
         grid-gap: 10px;
         grid-template-rows: auto auto 150px;
         grid-template-columns: auto;
@@ -40,6 +40,9 @@
         color: #2F2D4A;
     }
 
+    .privacy {
+        font-size: 70%;
+    }
 
     .box {
         font-size: 150%;
@@ -56,59 +59,9 @@
         min-height: 100px;
     }
 
-    .dropzone {
-        border: 2px dashed darkblue;
-        border-radius: 5px;
-        background: white;
-    }
-
-    .dropzone .dz-message {
-        font-weight: 400;
-    }
-
-    #images {
-        display: flex;
-        justify-content: center;
-        min-height: 300px;
-        flex-wrap: wrap;
-    }
-
-    .card {
-        margin: 5px;
-        height: 300px;
-        min-width: 216px;
-        padding: 2px;
-        /*border: 2px solid black;
-        border-radius: 5px;*/
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .loading {
-        -webkit-animation: loadingAnimation 1s 20 ease;
-        -moz-animation: loadingAnimation 1s 20 ease;
-        -o-animation: loadingAnimation 1s 20 ease;
-    }
-
-    .pulse {
-        -webkit-animation: pulseAnimation 1s infinite ease;
-        -moz-animation: pulseAnimation 1s infinite ease;
-        -o-animation: pulseAnimation 1s infinite ease;
-    }
-
     .formInput {
         margin-bottom: 10px;
         color: #666;
-    }
-
-    #SearchTerm {
-        font-family: Segoe UI, Frutiger, Frutiger Linotype, Dejavu Sans, Helvetica Neue, Arial, sans-serif;
-        font-size: 90%;
-        color: #2F2D4A;
-        border-radius: 3px;
-        border: 1px solid #666;
-        padding: 2px;
     }
 
 </style>
@@ -127,37 +80,23 @@
 
 <div class="wrapper">
     <div class="box header">
-        <h1><span class="fa fa-picture-o"></span> <span id="page-title">Mosaic Generator</span></h1>
+        <h1><span id="page-title">Mosaic Generator</span></h1>
     </div>
     <div class="box content">
-
         <form method="post" enctype="multipart/form-data" asp-controller="Mosaic" asp-action="UploadFile">
             <div class="form-group">
-                <h2>1. Upload an image</h2>
-                <input type="file" name="file">
+                <h2>Upload an image</h2>
+                <p><input type="file" name="file"></p>
             </div>
             <div class="form-group">
-                <input type="submit" value="Upload File">
+                <p><input type="submit" value="Upload File"></p>
             </div>
-        </form>        
-        <!-- <div>
-            <div class="formInput"><label for="SearchTerm">(Optional) Search term for image: </label> <input id="SearchTerm" type="text"></input></div>
-            <form class="dropzone needsclick dz-clickable" id="dropzone">
-                <div class="dz-message needsclick">
-                    Drop files here or click to upload.<br>
-                </div>
-            </form>
-        </div> -->
-        <h2>2. The photo mosaic will appear below</h2>
-        <div id="images">
-            <img src=@ViewData["imagePath"] />
-        </div>
+        </form>
     </div>
     <div class="box footer">
         <hr>
         <div class="privacy">
-            <p>This app has no official privacy policy. Your data will be uploaded to a service in order produce a picture.
-                Your images will be public once you upload them and there is no automated way to remove them.</p>
+            <p>This app has no official privacy policy. Your data will be uploaded to a service in order produce a photo mosaic.</p>
         </div>
     </div>
 </div>
